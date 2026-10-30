@@ -28,3 +28,4 @@ scipy>=1.12.0
 
 # Optional Computer Vision & Explainability Acceleration
 opencv-python-headless>=4.8.0
+gunicorn>=23.0.0
