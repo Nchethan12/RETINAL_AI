@@ -9,15 +9,16 @@ from model import VisionAIModel
 
 
 # ============================================================
-# 1. PATHS
+# 1. PATHS (Dynamically resolved relative to this file)
 # ============================================================
 
-TRAIN_EXCEL = "../../dataset/ODIR-5K/ODIR-5K/train.xlsx"
-VAL_EXCEL = "../../dataset/ODIR-5K/ODIR-5K/val.xlsx"
+ML_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(os.path.dirname(ML_DIR))
 
-IMAGE_DIR = "../../dataset/ODIR-5K/ODIR-5K/Training Images"
-
-WEIGHTS_DIR = "weights"
+TRAIN_EXCEL = os.path.join(PROJECT_ROOT, "dataset", "ODIR-5K", "ODIR-5K", "train.xlsx")
+VAL_EXCEL = os.path.join(PROJECT_ROOT, "dataset", "ODIR-5K", "ODIR-5K", "val.xlsx")
+IMAGE_DIR = os.path.join(PROJECT_ROOT, "dataset", "ODIR-5K", "ODIR-5K", "Training Images")
+WEIGHTS_DIR = os.path.join(ML_DIR, "weights")
 
 os.makedirs(WEIGHTS_DIR, exist_ok=True)
 
@@ -121,11 +122,11 @@ for epoch in range(EPOCHS):
     # TRAIN
     # --------------------------------------------------------
 
+    print(f"\n--- Starting Epoch {epoch + 1}/{EPOCHS} ---")
     model.train()
-
     train_loss = 0.0
 
-    for batch in train_loader:
+    for batch_idx, batch in enumerate(train_loader):
 
         images = batch["image"].to(device)
 
@@ -153,6 +154,11 @@ for epoch in range(EPOCHS):
         optimizer.step()
 
         train_loss += loss.item()
+
+        # Periodic live progress print
+        if (batch_idx + 1) % 25 == 0 or (batch_idx + 1) == len(train_loader):
+            pct = ((batch_idx + 1) / len(train_loader)) * 100
+            print(f"  Epoch [{epoch + 1}/{EPOCHS}] | Step [{batch_idx + 1:3d}/{len(train_loader)}] ({pct:5.1f}%) | Batch Loss: {loss.item():.4f}")
 
     train_loss /= len(train_loader)
 
@@ -193,8 +199,8 @@ for epoch in range(EPOCHS):
     # --------------------------------------------------------
 
     print(
-        f"Epoch [{epoch + 1}/{EPOCHS}] "
-        f"Train Loss: {train_loss:.4f} "
+        f"\n>> Epoch [{epoch + 1}/{EPOCHS}] Summary -> "
+        f"Train Loss: {train_loss:.4f} | "
         f"Val Loss: {val_loss:.4f}"
     )
 

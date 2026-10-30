@@ -16,10 +16,15 @@ Including another URLconf
 """
 from django.urls import path
 
-from .views import analyze_retina, sample_cases, analyze_anterior_selfie
+from .views import api_root, analyze_retina, sample_cases, analyze_anterior_selfie
 
 
 urlpatterns = [
+    path(
+        "",
+        api_root,
+        name="api-root",
+    ),
     path(
         "analyze/",
         analyze_retina,

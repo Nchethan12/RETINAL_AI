@@ -1,4 +1,5 @@
 import os
+import logging
 import torch
 import numpy as np
 from PIL import Image
@@ -7,6 +8,9 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
 from ml.model import VisionAIModel
+from ml.explainability import ViTExplainability
+
+logger = logging.getLogger(__name__)
 
 
 LABELS = [
@@ -333,10 +337,12 @@ CLINICAL_DISEASE_PROFILES = {
 
 
 # --------------------------------------------------
-# Device Configuration
+# Device Configuration (CUDA -> Apple Silicon MPS -> CPU)
 # --------------------------------------------------
 
-if torch.backends.mps.is_available():
+if torch.cuda.is_available():
+    DEVICE = torch.device("cuda")
+elif torch.backends.mps.is_available():
     DEVICE = torch.device("mps")
 else:
     DEVICE = torch.device("cpu")
@@ -368,6 +374,38 @@ state_dict = torch.load(
 
 model.load_state_dict(state_dict)
 model.eval()
+
+# --------------------------------------------------
+# AI Explainability Service (ViT-B/16 Grad-CAM)
+# --------------------------------------------------
+
+vit_explainer = ViTExplainability(model, DEVICE)
+
+
+def safe_explain(image_file, diagnosis, eye_label="Eye"):
+    """
+    Safely executes ViT Grad-CAM explainability without crashing the screening pipeline.
+    If explainability fails, gracefully returns an unavailable payload while logging the error.
+    """
+    try:
+        if hasattr(image_file, "seek"):
+            image_file.seek(0)
+        expl = vit_explainer.explain_screening_result(
+            image_source=image_file,
+            diagnosis=diagnosis,
+            eye_label=eye_label,
+            include_secondary=True,
+        )
+        if hasattr(image_file, "seek"):
+            image_file.seek(0)
+        return expl
+    except Exception as e:
+        logger.error(f"Explainability generation failed for {eye_label}: {e}", exc_info=True)
+        return {
+            "available": False,
+            "error": "Explainability visualization could not be generated.",
+            "eye": eye_label,
+        }
 
 
 # --------------------------------------------------
@@ -679,6 +717,26 @@ def analyze_retina(request):
             else:
                 patient_diag["verdict_title"] = "Bilateral Normal Retinal Fundus (Healthy)"
 
+            # Generate bilateral explainability maps
+            left_expl = safe_explain(left_file, left_diag, "Left Eye (OS)")
+            right_expl = safe_explain(right_file, right_diag, "Right Eye (OD)")
+
+            # Select primary patient-level explanation based on clinical severity
+            if left_diag["status"] == "disease_detected" and right_diag["status"] == "disease_detected":
+                l_conf = left_diag.get("confidence", 0)
+                r_conf = right_diag.get("confidence", 0)
+                primary_expl = left_expl if l_conf >= r_conf else right_expl
+            elif left_diag["status"] == "disease_detected":
+                primary_expl = left_expl
+            elif right_diag["status"] == "disease_detected":
+                primary_expl = right_expl
+            else:
+                primary_expl = left_expl
+
+            left_diag["explainability"] = left_expl
+            right_diag["explainability"] = right_expl
+            patient_diag["explainability"] = primary_expl
+
             return JsonResponse({
                 "success": True,
                 "mode": "bilateral",
@@ -689,6 +747,9 @@ def analyze_retina(request):
                 "left_eye": left_diag["raw_percentages"],
                 "right_eye": right_diag["raw_percentages"],
                 "calibrated_risks": patient_diag["calibrated_risks"],
+                "explainability": primary_expl,
+                "left_explainability": left_expl,
+                "right_explainability": right_expl,
             })
 
         # Left eye only
@@ -696,6 +757,9 @@ def analyze_retina(request):
             raw = predict_raw_probabilities(left_file)
             diag = diagnose_fundus(raw)
             diag["verdict_title"] = f"Left Eye (OS): {diag['verdict_title']}"
+            left_expl = safe_explain(left_file, diag, "Left Eye (OS)")
+            diag["explainability"] = left_expl
+
             return JsonResponse({
                 "success": True,
                 "mode": "left_eye",
@@ -703,6 +767,8 @@ def analyze_retina(request):
                 "left_diagnosis": diag,
                 "results": diag["raw_percentages"],
                 "calibrated_risks": diag["calibrated_risks"],
+                "explainability": left_expl,
+                "left_explainability": left_expl,
             })
 
         # Right eye only
@@ -710,6 +776,9 @@ def analyze_retina(request):
             raw = predict_raw_probabilities(right_file)
             diag = diagnose_fundus(raw)
             diag["verdict_title"] = f"Right Eye (OD): {diag['verdict_title']}"
+            right_expl = safe_explain(right_file, diag, "Right Eye (OD)")
+            diag["explainability"] = right_expl
+
             return JsonResponse({
                 "success": True,
                 "mode": "right_eye",
@@ -717,18 +786,24 @@ def analyze_retina(request):
                 "right_diagnosis": diag,
                 "results": diag["raw_percentages"],
                 "calibrated_risks": diag["calibrated_risks"],
+                "explainability": right_expl,
+                "right_explainability": right_expl,
             })
 
         # Generic single image
         else:
             raw = predict_raw_probabilities(single_file)
             diag = diagnose_fundus(raw)
+            single_expl = safe_explain(single_file, diag, "Eye")
+            diag["explainability"] = single_expl
+
             return JsonResponse({
                 "success": True,
                 "mode": "single",
                 "diagnosis": diag,
                 "results": diag["raw_percentages"],
                 "calibrated_risks": diag["calibrated_risks"],
+                "explainability": single_expl,
             })
 
     except Exception as error:
@@ -739,6 +814,32 @@ def analyze_retina(request):
             },
             status=500,
         )
+
+
+# --------------------------------------------------
+# API Root Status Endpoint
+# --------------------------------------------------
+
+def api_root(request):
+    """Returns Vision AI backend telemetry status and endpoint index."""
+    return JsonResponse({
+        "status": "online",
+        "service": "Vision AI — Intelligent Retinal & Anterior Ophthalmic Screening Platform",
+        "version": "2.0.0",
+        "frontend_url": "http://localhost:5173/",
+        "endpoints": {
+            "retinal_screening": "/analyze/ (POST)",
+            "anterior_selfie_screening": "/analyze-selfie/ (POST)",
+            "sample_cases": "/sample-cases/ (GET)",
+        },
+        "explainability": {
+            "status": "active",
+            "backbone": "Vision Transformer (ViT-B/16)",
+            "methodology": "Patch-Token Grad-CAM (Encoder Layers 10 & 11)",
+            "classes": 8,
+        },
+        "message": "Vision AI API backend is running! Open the React UI in your browser at http://localhost:5173/"
+    })
 
 
 # --------------------------------------------------

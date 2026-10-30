@@ -1,0 +1,30 @@
+# ==============================================================================
+# Vision AI — Backend Dependencies (Python 3.10+)
+# Repository: retinal-ai-vit (Vision_AI)
+# ==============================================================================
+
+# Core Web Framework & REST API Gateway
+Django>=6.0.0,<7.0.0
+django-cors-headers>=4.9.0
+djangorestframework>=3.18.0
+asgiref>=3.12.0
+sqlparse>=0.6.0
+
+# Deep Learning Runtime & Computer Vision Backbones (ViT-B/16 & ResNet-50)
+torch>=2.2.0
+torchvision>=0.17.0
+
+# Image Processing & Array Telemetry
+pillow>=10.0.0
+numpy>=1.26.0
+
+# Dataset Ingestion & Annotation Parsers (ODIR-5K Excel & Anterior CSVs)
+pandas>=2.2.0
+openpyxl>=3.1.2
+
+# Scientific Computing & Clinical Metric Evaluation
+scikit-learn>=1.4.0
+scipy>=1.12.0
+
+# Optional Computer Vision & Explainability Acceleration
+opencv-python-headless>=4.8.0

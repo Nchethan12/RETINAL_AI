@@ -26,6 +26,7 @@ import CursorGlow from "./components/CursorGlow";
 import HospitalReport from "./components/HospitalReport";
 import FeatureDetailModal from "./components/FeatureDetailModal";
 import AnteriorSelfiePage from "./components/AnteriorSelfiePage";
+import ExplainabilityCard from "./components/ExplainabilityCard";
 import "./App.css";
 
 const API_URL = "/analyze/";
@@ -1239,6 +1240,13 @@ function App() {
               rightDiagnosis={analysisData?.right_diagnosis}
               mode={analysisData?.mode}
               activeTab={activeTab}
+            />
+
+            {/* AI Explainability & Retinal Saliency Overlay Layer */}
+            <ExplainabilityCard
+              analysisData={analysisData}
+              activeTab={activeTab}
+              onSelectTab={setActiveTab}
             />
 
             {/* Official Hospital-Grade Clinical Screening Report Launcher Card */}

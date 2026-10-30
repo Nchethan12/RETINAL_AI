@@ -347,6 +347,8 @@ export default function HospitalReport({
     ? currentDiag?.badge_type || "high"
     : "normal";
 
+  const currentExpl = currentDiag?.explainability || diagnosis?.explainability;
+
   const currentDateStr = new Date().toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
@@ -549,6 +551,55 @@ Requires clinical confirmation by licensed ophthalmologist.
               </button>
             </div>
           </div>
+
+          {/* AI Explainability & Saliency Overlay Panel (if available) */}
+          {currentExpl && currentExpl.available && (
+            <div className="hospital-explainability-panel">
+              <div className="hosp-xai-header">
+                <div className="hosp-xai-title">
+                  <Sparkles size={16} color="#38bdf8" />
+                  <span>AI EXPLAINABILITY · {currentExpl.eye || "RETINAL FUNDUS"}</span>
+                </div>
+                <div className="diag-tags-row" style={{ margin: 0 }}>
+                  <span className="icd10-pill" style={{ background: "rgba(56, 189, 248, 0.15)", color: "#38bdf8", borderColor: "rgba(56, 189, 248, 0.3)" }}>
+                    Attribution Target: {currentExpl.class_name}
+                  </span>
+                  <span className="confidence-pill">
+                    ViT-B/16 Multi-Layer Attention
+                  </span>
+                </div>
+              </div>
+
+              <div className="hosp-xai-grid">
+                <div className="hosp-xai-box">
+                  <span className="hosp-xai-box-label">Original Fundus Photograph</span>
+                  <img
+                    src={currentExpl.original}
+                    alt="Original Fundus Scan"
+                    className="hosp-xai-img"
+                  />
+                </div>
+
+                <div className="hosp-xai-box" style={{ borderColor: "rgba(56, 189, 248, 0.3)" }}>
+                  <span className="hosp-xai-box-label" style={{ color: "#38bdf8" }}>
+                    AI Decision Attribution Overlay
+                  </span>
+                  <img
+                    src={currentExpl.overlay}
+                    alt={`AI Decision Attribution Overlay for ${currentExpl.class_name}`}
+                    className="hosp-xai-img"
+                  />
+                </div>
+              </div>
+
+              <p className="hosp-xai-note">
+                <strong>Attribution Note:</strong> {currentExpl.attribution_note || "Highlighted regions indicate anatomical areas contributing to the AI model prediction."}
+              </p>
+              <p className="hosp-xai-note" style={{ fontSize: "10.5px", color: "#64748b", marginTop: "4px" }}>
+                <em>Disclaimer: Highlighted regions indicate areas receiving higher model attribution for this prediction. Visualization is provided to support clinical interpretation and does not constitute a medical diagnosis.</em>
+              </p>
+            </div>
+          )}
 
           {/* Section Navigation Tabs */}
           <div className="hospital-nav-tabs">
