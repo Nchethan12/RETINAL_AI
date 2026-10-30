@@ -393,7 +393,10 @@ def safe_explain(image_file, diagnosis, eye_label="Eye"):
         if hasattr(image_file, "seek"):
             image_file.seek(0)
         get_model()
-        expl = vit_explainer.explain_screening_result(
+        explainer = vit_explainer
+        if explainer is None:
+            raise RuntimeError("The explainability service was not initialized.")
+        expl = explainer.explain_screening_result(
             image_source=image_file,
             diagnosis=diagnosis,
             eye_label=eye_label,
