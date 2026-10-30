@@ -798,15 +798,15 @@ export default function AnteriorSelfiePage({ onSwitchToRetinal }) {
                     {activeInputTab === "camera"
                       ? "LIVE WEBCAM / FRONT CAMERA"
                       : activeInputTab === "upload"
-                      ? "FILE UPLOAD"
-                      : "CLINICAL PRESETS"}
+                        ? "FILE UPLOAD"
+                        : "CLINICAL PRESETS"}
                   </span>
                   <h3>
                     {activeInputTab === "camera"
                       ? "Direct Eyeball Tracking & Extraction"
                       : activeInputTab === "upload"
-                      ? "Select Eye Picture"
-                      : "Verified Clinical Sample"}
+                        ? "Select Eye Picture"
+                        : "Verified Clinical Sample"}
                   </h3>
                 </div>
 
