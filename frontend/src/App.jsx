@@ -29,7 +29,9 @@ import AnteriorSelfiePage from "./components/AnteriorSelfiePage";
 import ExplainabilityCard from "./components/ExplainabilityCard";
 import "./App.css";
 
-const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+const API_BASE_URL = (
+  import.meta.env.VITE_API_URL || "https://retinal-ai-backend.onrender.com"
+).replace(/\/$/, "");
 const API_URL = `${API_BASE_URL}/analyze/`;
 
 const DISEASES = [
