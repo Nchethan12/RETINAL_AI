@@ -2,6 +2,7 @@ services:
   - type: web
     name: retinal-ai-backend
     runtime: python
+    plan: free
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn api.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --timeout 120
