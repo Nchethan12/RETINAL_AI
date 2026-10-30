@@ -1,5 +1,6 @@
 import os
 import logging
+from threading import Lock
 import torch
 import numpy as np
 from PIL import Image
@@ -363,23 +364,24 @@ MODEL_PATH = os.path.join(
     "vision_ai_vit.pth",
 )
 
-model = VisionAIModel(
-    num_classes=8
-).to(DEVICE)
+model = None
+vit_explainer = None
+model_lock = Lock()
 
-state_dict = torch.load(
-    MODEL_PATH,
-    map_location="cpu"
-)
 
-model.load_state_dict(state_dict)
-model.eval()
-
-# --------------------------------------------------
-# AI Explainability Service (ViT-B/16 Grad-CAM)
-# --------------------------------------------------
-
-vit_explainer = ViTExplainability(model, DEVICE)
+def get_model():
+    """Load the model on the first inference request, not during web startup."""
+    global model, vit_explainer
+    if model is None:
+        with model_lock:
+            if model is None:
+                loaded_model = VisionAIModel(num_classes=8).to(DEVICE)
+                state_dict = torch.load(MODEL_PATH, map_location="cpu")
+                loaded_model.load_state_dict(state_dict)
+                loaded_model.eval()
+                model = loaded_model
+                vit_explainer = ViTExplainability(model, DEVICE)
+    return model
 
 
 def safe_explain(image_file, diagnosis, eye_label="Eye"):
@@ -390,6 +392,7 @@ def safe_explain(image_file, diagnosis, eye_label="Eye"):
     try:
         if hasattr(image_file, "seek"):
             image_file.seek(0)
+        get_model()
         expl = vit_explainer.explain_screening_result(
             image_source=image_file,
             diagnosis=diagnosis,
@@ -520,7 +523,7 @@ def predict_raw_probabilities(image_file):
     image_tensor = transform(image).unsqueeze(0).to(DEVICE)
 
     with torch.no_grad():
-        logits = model(image_tensor)
+        logits = get_model()(image_tensor)
         probabilities = torch.sigmoid(logits)[0]
 
     return {
