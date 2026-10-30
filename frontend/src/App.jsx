@@ -29,7 +29,8 @@ import AnteriorSelfiePage from "./components/AnteriorSelfiePage";
 import ExplainabilityCard from "./components/ExplainabilityCard";
 import "./App.css";
 
-const API_URL = "/analyze/";
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+const API_URL = `${API_BASE_URL}/analyze/`;
 
 const DISEASES = [
   {
@@ -735,26 +736,10 @@ function App() {
     setAnalyzing(true);
 
     try {
-      let response;
-
-      try {
-        response = await fetch(
-          API_URL,
-          {
-            method: "POST",
-            body: formData,
-          }
-        );
-      } catch {
-        // Fallback directly to Django backend URL
-        response = await fetch(
-          "http://127.0.0.1:8000/analyze/",
-          {
-            method: "POST",
-            body: formData,
-          }
-        );
-      }
+      const response = await fetch(API_URL, {
+        method: "POST",
+        body: formData,
+      });
 
       const data =
         await response.json();

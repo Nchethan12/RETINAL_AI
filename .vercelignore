@@ -1,0 +1,4 @@
+backend/.venv/
+backend/ml/weights/
+backend/db.sqlite3
+dataset/
