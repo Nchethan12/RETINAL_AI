@@ -832,7 +832,7 @@ def api_root(request):
         "status": "online",
         "service": "Vision AI — Intelligent Retinal & Anterior Ophthalmic Screening Platform",
         "version": "2.0.0",
-        "frontend_url": "http://localhost:5173/",
+        "frontend_url": "https://retinal-ai-ten.vercel.app/",
         "endpoints": {
             "retinal_screening": "/analyze/ (POST)",
             "anterior_selfie_screening": "/analyze-selfie/ (POST)",
