@@ -149,3 +149,4 @@ CORS_ALLOWED_ORIGINS.update(
         "http://localhost:3000",
     }
 )
+CORS_ALLOWED_ORIGIN_REGEXES = [r"^https://retinal-ai-[a-z0-9-]+\.vercel\.app$"]
