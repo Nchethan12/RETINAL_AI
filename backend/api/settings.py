@@ -136,11 +136,16 @@ MAILERS = {
 
 # CORS Configuration
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = [
+CORS_ALLOWED_ORIGINS = {
     origin.strip()
-    for origin in os.environ.get(
-        "CORS_ALLOWED_ORIGINS",
-        "https://retinal-ai-ten.vercel.app,http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000",
-    ).split(",")
+    for origin in os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",")
     if origin.strip()
-]
+}
+CORS_ALLOWED_ORIGINS.update(
+    {
+        "https://retinal-ai-ten.vercel.app",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:3000",
+    }
+)
