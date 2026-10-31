@@ -196,7 +196,10 @@ function validateClientFundusImage(file) {
 
     img.onerror = () => {
       URL.revokeObjectURL(objectUrl);
-      resolve({ valid: false, error: "Failed to read image file." });
+      resolve({
+        valid: true,
+        warning: "The browser could not preview this file; the backend will validate it.",
+      });
     };
 
     img.src = objectUrl;
@@ -743,8 +746,10 @@ function App() {
         body: formData,
       });
 
-      const data =
-        await response.json();
+      const contentType = response.headers.get("content-type") || "";
+      const data = contentType.includes("application/json")
+        ? await response.json()
+        : { error: `Backend returned HTTP ${response.status}.` };
 
       if (!response.ok || !data.success) {
         throw new Error(
