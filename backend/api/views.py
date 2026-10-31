@@ -12,6 +12,7 @@ from ml.model import VisionAIModel
 from ml.explainability import ViTExplainability
 
 logger = logging.getLogger(__name__)
+torch.set_num_threads(1)
 
 
 LABELS = [
@@ -367,6 +368,7 @@ MODEL_PATH = os.path.join(
 model = None
 vit_explainer = None
 model_lock = Lock()
+ENABLE_EXPLAINABILITY = os.environ.get("ENABLE_EXPLAINABILITY", "false").lower() == "true"
 
 
 def get_model():
@@ -389,6 +391,12 @@ def safe_explain(image_file, diagnosis, eye_label="Eye"):
     Safely executes ViT Grad-CAM explainability without crashing the screening pipeline.
     If explainability fails, gracefully returns an unavailable payload while logging the error.
     """
+    if not ENABLE_EXPLAINABILITY:
+        return {
+            "status": "unavailable",
+            "message": "Explainability is disabled on the free runtime to preserve memory.",
+        }
+
     try:
         if hasattr(image_file, "seek"):
             image_file.seek(0)

@@ -818,8 +818,9 @@ function App() {
       );
 
       setError(
-        err.message ||
-        "Unable to connect to the Vision AI backend."
+        err.name === "TypeError"
+          ? "The AI backend is busy loading the retinal model. Please wait 1–2 minutes and try again."
+          : err.message || "Unable to connect to the Vision AI backend."
       );
 
     } finally {
