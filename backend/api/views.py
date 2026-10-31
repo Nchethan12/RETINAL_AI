@@ -1,18 +1,12 @@
 import os
 import logging
 from threading import Lock
-import torch
 import numpy as np
 from PIL import Image
-from torchvision import transforms
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
-from ml.model import VisionAIModel
-from ml.explainability import ViTExplainability
-
 logger = logging.getLogger(__name__)
-torch.set_num_threads(1)
 
 
 LABELS = [
@@ -339,18 +333,6 @@ CLINICAL_DISEASE_PROFILES = {
 
 
 # --------------------------------------------------
-# Device Configuration (CUDA -> Apple Silicon MPS -> CPU)
-# --------------------------------------------------
-
-if torch.cuda.is_available():
-    DEVICE = torch.device("cuda")
-elif torch.backends.mps.is_available():
-    DEVICE = torch.device("mps")
-else:
-    DEVICE = torch.device("cpu")
-
-
-# --------------------------------------------------
 # Model Loading
 # --------------------------------------------------
 
@@ -367,6 +349,7 @@ MODEL_PATH = os.path.join(
 
 model = None
 vit_explainer = None
+DEVICE = None
 model_lock = Lock()
 ENABLE_EXPLAINABILITY = os.environ.get("ENABLE_EXPLAINABILITY", "false").lower() == "true"
 USE_VIT_MODEL = os.environ.get("USE_VIT_MODEL", "false").lower() == "true"
@@ -374,10 +357,22 @@ USE_VIT_MODEL = os.environ.get("USE_VIT_MODEL", "false").lower() == "true"
 
 def get_model():
     """Load the model on the first inference request, not during web startup."""
-    global model, vit_explainer
+    global DEVICE, model, vit_explainer
     if model is None:
         with model_lock:
             if model is None:
+                import torch
+                from ml.explainability import ViTExplainability
+                from ml.model import VisionAIModel
+
+                torch.set_num_threads(1)
+                if torch.cuda.is_available():
+                    DEVICE = torch.device("cuda")
+                elif torch.backends.mps.is_available():
+                    DEVICE = torch.device("mps")
+                else:
+                    DEVICE = torch.device("cpu")
+
                 loaded_model = VisionAIModel(num_classes=8).to(DEVICE)
                 state_dict = torch.load(MODEL_PATH, map_location="cpu")
                 loaded_model.load_state_dict(state_dict)
@@ -421,20 +416,6 @@ def safe_explain(image_file, diagnosis, eye_label="Eye"):
             "error": "Explainability visualization could not be generated.",
             "eye": eye_label,
         }
-
-
-# --------------------------------------------------
-# Image Preprocessing
-# --------------------------------------------------
-
-transform = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.ToTensor(),
-    transforms.Normalize(
-        mean=[0.485, 0.456, 0.406],
-        std=[0.229, 0.224, 0.225]
-    ),
-])
 
 
 # --------------------------------------------------
@@ -552,10 +533,22 @@ def predict_raw_probabilities(image_file):
             "Other": 0.05,
         }
 
-    image_tensor = transform(image).unsqueeze(0).to(DEVICE)
+    import torch
+    from torchvision import transforms
+
+    loaded_model = get_model()
+    image_transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(
+            mean=[0.485, 0.456, 0.406],
+            std=[0.229, 0.224, 0.225]
+        ),
+    ])
+    image_tensor = image_transform(image).unsqueeze(0).to(DEVICE)
 
     with torch.no_grad():
-        logits = get_model()(image_tensor)
+        logits = loaded_model(image_tensor)
         probabilities = torch.sigmoid(logits)[0]
 
     return {
