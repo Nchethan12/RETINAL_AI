@@ -214,6 +214,7 @@ function EyeUploadCard({
   onRemove,
   isAnalyzing,
 }) {
+  const [previewFailed, setPreviewFailed] = useState(false);
   const preview = useMemo(() => {
     if (!file) return "";
     return URL.createObjectURL(file);
@@ -225,6 +226,10 @@ function EyeUploadCard({
         URL.revokeObjectURL(preview);
       }
     };
+  }, [preview]);
+
+  useEffect(() => {
+    setPreviewFailed(false);
   }, [preview]);
 
   return (
@@ -286,11 +291,19 @@ function EyeUploadCard({
         ) : (
           <div className="preview-wrapper">
             <div className="fundus-img-container">
-              <img
-                src={preview}
-                alt={`${eyeName} fundus`}
-                className="fundus-preview"
-              />
+              {previewFailed ? (
+                <div className="fundus-preview-fallback" role="status">
+                  Preview unavailable. The backend will validate this file when
+                  you analyze it.
+                </div>
+              ) : (
+                <img
+                  src={preview}
+                  alt={`${eyeName} fundus`}
+                  className="fundus-preview"
+                  onError={() => setPreviewFailed(true)}
+                />
+              )}
               {isAnalyzing && (
                 <div className="scanning-overlay">
                   <div className="scanner-line" />
