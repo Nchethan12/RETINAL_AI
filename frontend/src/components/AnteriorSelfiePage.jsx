@@ -27,8 +27,7 @@ import CursorGlow from "./CursorGlow";
 import HospitalReport from "./HospitalReport";
 
 const API_BASE_URL = (
-  import.meta.env.VITE_API_URL ||
-  (import.meta.env.PROD ? "/api" : "https://retinal-ai-backend.onrender.com")
+  import.meta.env.VITE_API_URL || "https://retinal-ai-backend.onrender.com"
 ).replace(/\/$/, "");
 
 const PRESET_SAMPLE_CASES = [
