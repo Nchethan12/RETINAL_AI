@@ -8,8 +8,6 @@ import {
   ShieldAlert,
   Cpu,
   Info,
-  Maximize2,
-  CheckCircle2,
 } from "lucide-react";
 import TiltCard from "./TiltCard";
 
@@ -33,14 +31,16 @@ export default function ExplainabilityCard({
   }, [activeTab, analysisData]);
 
   const [selectedEye, setSelectedEye] = useState(initialEye);
+  const [prevActiveTab, setPrevActiveTab] = useState(activeTab);
   const [viewMode, setViewMode] = useState("overlay"); // "overlay" | "heatmap" | "original" | "split"
   const [selectedFindingIdx, setSelectedFindingIdx] = useState(0); // 0 = primary, 1..n = secondary
 
   // Keep selectedEye in sync if activeTab changes from parent
-  useMemo(() => {
+  if (prevActiveTab !== activeTab) {
+    setPrevActiveTab(activeTab);
     if (activeTab === "left") setSelectedEye("left");
     if (activeTab === "right") setSelectedEye("right");
-  }, [activeTab]);
+  }
 
   // Resolve active explainability data based on eye
   const activeEyeExpl = useMemo(() => {
@@ -70,7 +70,7 @@ export default function ExplainabilityCard({
       },
     ];
     if (Array.isArray(activeEyeExpl.secondary_explanations)) {
-      activeEyeExpl.secondary_explanations.forEach((sec, idx) => {
+      activeEyeExpl.secondary_explanations.forEach((sec) => {
         list.push({
           ...sec,
           isPrimary: false,

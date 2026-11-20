@@ -351,8 +351,8 @@ model = None
 vit_explainer = None
 DEVICE = None
 model_lock = Lock()
-ENABLE_EXPLAINABILITY = os.environ.get("ENABLE_EXPLAINABILITY", "false").lower() == "true"
-USE_VIT_MODEL = os.environ.get("USE_VIT_MODEL", "false").lower() == "true"
+ENABLE_EXPLAINABILITY = os.environ.get("ENABLE_EXPLAINABILITY", "true" if os.path.exists(MODEL_PATH) else "false").lower() == "true"
+USE_VIT_MODEL = os.environ.get("USE_VIT_MODEL", "true" if os.path.exists(MODEL_PATH) else "false").lower() == "true"
 
 
 def get_model():
@@ -1350,36 +1350,72 @@ def analyze_anterior_selfie(request):
 
     try:
         # Case 1: Preset Clinical Condition
-        if preset_condition and preset_condition in ANTERIOR_DISEASE_PROFILES:
-            primary_name = preset_condition
-            confidence = 95.8
-            finding_profile = ANTERIOR_DISEASE_PROFILES[primary_name]
-            scores = {k: 4.2 for k in ANTERIOR_DISEASE_PROFILES}
-            scores[primary_name] = confidence
-            status = "normal" if "Normal" in primary_name else "disease_detected"
-            severity = "Healthy / Low Risk" if "Normal" in primary_name else "Active Clinical Finding"
-            badge_type = "normal" if "Normal" in primary_name else ("high" if "Jaundice" in primary_name or "Cataract" in primary_name else "warning")
-            biometrics = {
-                "scleral_redness_ratio": 0.82 if "Conjunctivitis" in primary_name else 0.51,
-                "bilirubin_yellow_index": 52.4 if "Jaundice" in primary_name else 14.2,
-                "focal_blood_density": 8.6 if "Hemorrhage" in primary_name else 0.0,
-                "pupil_luminance": 182.0 if "Cataract" in primary_name else 42.0,
-            }
+        if preset_condition:
+            norm_preset = preset_condition.strip().lower()
+            resolved_key = None
+            for key in ANTERIOR_DISEASE_PROFILES:
+                if key.lower() == norm_preset:
+                    resolved_key = key
+                    break
+            if not resolved_key:
+                alias_map = {
+                    "conjunctivitis": "Conjunctivitis (Pink Eye)",
+                    "pink eye": "Conjunctivitis (Pink Eye)",
+                    "jaundice": "Scleral Icterus (Jaundice)",
+                    "icterus": "Scleral Icterus (Jaundice)",
+                    "hemorrhage": "Subconjunctival Hemorrhage",
+                    "subconjunctival": "Subconjunctival Hemorrhage",
+                    "stye": "Stye (Hordeolum / Chalazion)",
+                    "chalazion": "Stye (Hordeolum / Chalazion)",
+                    "hordeolum": "Stye (Hordeolum / Chalazion)",
+                    "pterygium": "Pterygium ('Surfer's Eye')",
+                    "surfer": "Pterygium ('Surfer's Eye')",
+                    "leukocoria": "Corneal Opacity / Mature Cataract (Leukocoria)",
+                    "cataract": "Corneal Opacity / Mature Cataract (Leukocoria)",
+                    "opacity": "Corneal Opacity / Mature Cataract (Leukocoria)",
+                    "normal": "Normal Healthy Anterior Segment",
+                    "healthy": "Normal Healthy Anterior Segment",
+                }
+                for alias, target in alias_map.items():
+                    if alias in norm_preset:
+                        resolved_key = target
+                        break
 
-            return JsonResponse({
-                "success": True,
-                "mode": "anterior_selfie",
-                "bilateral": False,
-                "primary_disease": primary_name,
-                "confidence": confidence,
-                "status": status,
-                "severity": severity,
-                "badge_type": badge_type,
-                "verdict_title": f"{primary_name} Detected" if status == "disease_detected" else "Healthy Anterior Eye (Normal)",
-                "scores": scores,
-                "biometrics": biometrics,
-                "clinical_report": finding_profile,
-            })
+            if resolved_key and resolved_key in ANTERIOR_DISEASE_PROFILES:
+                primary_name = resolved_key
+                confidence = 95.8
+                finding_profile = ANTERIOR_DISEASE_PROFILES[primary_name]
+                scores = {k: 4.2 for k in ANTERIOR_DISEASE_PROFILES}
+                scores[primary_name] = confidence
+                status = "normal" if "Normal" in primary_name else "disease_detected"
+                severity = "Healthy / Low Risk" if "Normal" in primary_name else "Active Clinical Finding"
+                badge_type = "normal" if "Normal" in primary_name else ("high" if "Jaundice" in primary_name or "Cataract" in primary_name else "warning")
+                biometrics = {
+                    "scleral_redness_ratio": 0.82 if "Conjunctivitis" in primary_name else 0.51,
+                    "bilirubin_yellow_index": 52.4 if "Jaundice" in primary_name else 14.2,
+                    "focal_blood_density": 8.6 if "Hemorrhage" in primary_name else 0.0,
+                    "pupil_luminance": 182.0 if "Cataract" in primary_name else 42.0,
+                }
+
+                return JsonResponse({
+                    "success": True,
+                    "mode": "anterior_selfie",
+                    "bilateral": False,
+                    "primary_disease": primary_name,
+                    "confidence": confidence,
+                    "status": status,
+                    "severity": severity,
+                    "badge_type": badge_type,
+                    "verdict_title": f"{primary_name} Detected" if status == "disease_detected" else "Healthy Anterior Eye (Normal)",
+                    "scores": scores,
+                    "biometrics": biometrics,
+                    "clinical_report": finding_profile,
+                })
+            elif not left_file and not right_file and not image_file:
+                return JsonResponse({
+                    "success": False,
+                    "error": f"Unknown preset condition '{preset_condition}'. Available presets: {list(ANTERIOR_DISEASE_PROFILES.keys())}",
+                }, status=400)
 
         # Case 2: Bilateral Eyeball Crops (Explicit Left & Right Eyeball)
         if left_file and right_file:
@@ -1460,6 +1496,9 @@ def analyze_anterior_selfie(request):
             })
 
         # Case 3: Single Image (Either an isolated eyeball or a dual-eye / face selfie)
+        if not image_file:
+            return JsonResponse({"success": False, "error": "No eye selfie image or eyeball crops uploaded."}, status=400)
+
         image = Image.open(image_file).convert("RGB")
         w, h = image.size
 

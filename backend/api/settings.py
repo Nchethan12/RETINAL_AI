@@ -28,9 +28,11 @@ DEBUG = os.environ.get("DJANGO_DEBUG", "False").lower() == "true"
 
 ALLOWED_HOSTS = [
     host.strip()
-    for host in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+    for host in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,testserver").split(",")
     if host.strip()
 ]
+if "testserver" not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append("testserver")
 
 
 # Application definition
@@ -136,17 +138,17 @@ MAILERS = {
 
 # CORS Configuration
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = {
+CORS_ALLOWED_ORIGINS = [
     origin.strip()
     for origin in os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",")
     if origin.strip()
-}
-CORS_ALLOWED_ORIGINS.update(
-    {
+]
+CORS_ALLOWED_ORIGINS.extend(
+    [
         "https://retinal-ai-ten.vercel.app",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "http://localhost:3000",
-    }
+    ]
 )
 CORS_ALLOWED_ORIGIN_REGEXES = [r"^https://retinal-ai-[a-z0-9-]+\.vercel\.app$"]

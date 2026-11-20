@@ -3,8 +3,8 @@ import { useRef, useState, useCallback } from "react";
 export default function TiltCard({
   children,
   className = "",
-  maxTilt = 10,
-  scale = 1.02,
+  maxTilt = 6,
+  scale = 1.01,
   perspective = 1000,
   onClick,
   style = {},
@@ -15,7 +15,6 @@ export default function TiltCard({
   const [transform, setTransform] = useState(
     "perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)"
   );
-  const [shine, setShine] = useState({ x: 50, y: 50, opacity: 0 });
 
   const handleMouseMove = useCallback(
     (e) => {
@@ -26,22 +25,13 @@ export default function TiltCard({
       const clientX = e.clientX - rect.left;
       const clientY = e.clientY - rect.top;
 
-      const xPercent = (clientX / rect.width) * 100;
-      const yPercent = (clientY / rect.height) * 100;
-
-      // Calculate tilt angles
+      // Calculate tilt angles smoothly without specular white highlights
       const rotateX = ((clientY / rect.height - 0.5) * -maxTilt).toFixed(2);
       const rotateY = ((clientX / rect.width - 0.5) * maxTilt).toFixed(2);
 
       setTransform(
         `perspective(${perspective}px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(${scale}, ${scale}, ${scale})`
       );
-
-      setShine({
-        x: xPercent.toFixed(1),
-        y: yPercent.toFixed(1),
-        opacity: 0.22,
-      });
     },
     [maxTilt, perspective, scale]
   );
@@ -55,7 +45,6 @@ export default function TiltCard({
     setTransform(
       `perspective(${perspective}px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`
     );
-    setShine((prev) => ({ ...prev, opacity: 0 }));
   };
 
   return (
@@ -78,21 +67,6 @@ export default function TiltCard({
       {...props}
     >
       {children}
-
-      {/* Dynamic Specular Light Reflection Overlay */}
-      <div
-        className="tilt-card-shine"
-        style={{
-          position: "absolute",
-          inset: 0,
-          borderRadius: "inherit",
-          pointerEvents: "none",
-          background: `radial-gradient(circle at ${shine.x}% ${shine.y}%, rgba(255, 255, 255, ${shine.opacity}), transparent 65%)`,
-          transition: isHovered ? "opacity 0.15s ease-out" : "opacity 0.5s ease-out",
-          zIndex: 10,
-        }}
-        aria-hidden="true"
-      />
     </div>
   );
 }

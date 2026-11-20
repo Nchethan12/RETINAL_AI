@@ -1,9 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import confetti from "canvas-confetti";
 import {
   Activity,
-  Brain,
-  CheckCircle2,
   ChevronRight,
   Cpu,
   Eye,
@@ -14,7 +11,6 @@ import {
   ShieldAlert,
   Sparkles,
   UploadCloud,
-  Zap,
   ExternalLink,
   Printer,
   Camera,
@@ -22,7 +18,6 @@ import {
 import RetinalBackground3D from "./components/RetinalBackground3D";
 import HolographicEye3D from "./components/HolographicEye3D";
 import TiltCard from "./components/TiltCard";
-import CursorGlow from "./components/CursorGlow";
 import HospitalReport from "./components/HospitalReport";
 import FeatureDetailModal from "./components/FeatureDetailModal";
 import AnteriorSelfiePage from "./components/AnteriorSelfiePage";
@@ -30,7 +25,7 @@ import ExplainabilityCard from "./components/ExplainabilityCard";
 import "./App.css";
 
 const API_BASE_URL = (
-  import.meta.env.VITE_API_URL || "https://retinal-ai-backend.onrender.com"
+  import.meta.env.VITE_API_URL || ""
 ).replace(/\/$/, "");
 const API_URL = `${API_BASE_URL}/analyze/`;
 
@@ -214,11 +209,17 @@ function EyeUploadCard({
   onRemove,
   isAnalyzing,
 }) {
+  const [prevPreview, setPrevPreview] = useState("");
   const [previewFailed, setPreviewFailed] = useState(false);
   const preview = useMemo(() => {
     if (!file) return "";
     return URL.createObjectURL(file);
   }, [file]);
+
+  if (prevPreview !== preview) {
+    setPrevPreview(preview);
+    setPreviewFailed(false);
+  }
 
   useEffect(() => {
     return () => {
@@ -226,10 +227,6 @@ function EyeUploadCard({
         URL.revokeObjectURL(preview);
       }
     };
-  }, [preview]);
-
-  useEffect(() => {
-    setPreviewFailed(false);
   }, [preview]);
 
   return (
@@ -590,13 +587,27 @@ function ResultCard({
   );
 }
 
+function getSavedReportSession() {
+  if (typeof window === "undefined") return null;
+  const isStandalone = new URLSearchParams(window.location.search).get("view") === "report";
+  if (!isStandalone) return null;
+  try {
+    const saved = sessionStorage.getItem("vision_ai_report_data");
+    return saved ? JSON.parse(saved) : null;
+  } catch {
+    return null;
+  }
+}
+
 function App() {
+  const savedSession = useMemo(() => getSavedReportSession(), []);
+
   const [leftEye, setLeftEye] = useState(null);
   const [rightEye, setRightEye] = useState(null);
 
-  const [analysisData, setAnalysisData] = useState(null);
-  const [activeTab, setActiveTab] = useState("all");
-  const [results, setResults] = useState(null);
+  const [analysisData, setAnalysisData] = useState(() => savedSession?.analysisData || null);
+  const [activeTab, setActiveTab] = useState(() => savedSession?.activeTab || "all");
+  const [results, setResults] = useState(() => savedSession?.results || savedSession?.analysisData?.results || null);
   const [scoreViewMode, setScoreViewMode] = useState("calibrated");
 
   const [analyzing, setAnalyzing] = useState(false);
@@ -626,25 +637,6 @@ function App() {
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
-
-  // Restore session data if opening report in a new tab
-  useEffect(() => {
-    if (isStandaloneView && !analysisData) {
-      try {
-        const saved = sessionStorage.getItem("vision_ai_report_data");
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (parsed.analysisData) {
-            setAnalysisData(parsed.analysisData);
-            setResults(parsed.results || parsed.analysisData.results);
-            if (parsed.activeTab) setActiveTab(parsed.activeTab);
-          }
-        }
-      } catch (e) {
-        console.error("Failed to restore report session:", e);
-      }
-    }
-  }, [isStandaloneView, analysisData]);
 
   const handleOpenInNewTab = () => {
     try {
@@ -781,18 +773,6 @@ function App() {
             : "left"
       );
 
-      // Trigger celebratory particle telemetry burst on completion
-      try {
-        confetti({
-          particleCount: 65,
-          spread: 75,
-          origin: { y: 0.62 },
-          colors: ["#38bdf8", "#2dd4bf", "#818cf8", "#34d399", "#ffffff"],
-        });
-      } catch {
-        // Fallback gracefully if confetti unavailable
-      }
-
       if (data.mode === "bilateral") {
         setMessage(
           "Bilateral analysis complete: Both Left (OS) and Right (OD) eyes evaluated successfully."
@@ -833,7 +813,6 @@ function App() {
     return (
       <div className="app standalone-report-page">
         <RetinalBackground3D />
-        <CursorGlow />
         <div className="standalone-report-container">
           <HospitalReport
             diagnosis={analysisData?.diagnosis}
@@ -863,9 +842,6 @@ function App() {
     <div className="app">
       {/* Dynamic 3D Neural-Retina Particle Background */}
       <RetinalBackground3D />
-
-      {/* Ambient Mouse Flashlight Spotlight */}
-      <CursorGlow />
 
       {/* ================= NAVBAR ================= */}
 

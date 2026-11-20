@@ -3,7 +3,6 @@ import * as THREE from "three";
 
 export default function HolographicEye3D() {
   const containerRef = useRef(null);
-  const [activeLayer, setActiveLayer] = useState("all"); // 'all', 'vessels', 'grid'
   const [isInteracting, setIsInteracting] = useState(false);
 
   useEffect(() => {

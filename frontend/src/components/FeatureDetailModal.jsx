@@ -8,19 +8,13 @@ import {
   Layers,
   FileText,
   CheckCircle2,
-  AlertTriangle,
   ArrowRight,
   ArrowLeft,
-  Sliders,
   TrendingUp,
-  Clock,
-  ExternalLink,
   Award,
-  Stethoscope,
-  Microscope,
 } from "lucide-react";
 
-export const FEATURE_DETAILS = {
+const FEATURE_DETAILS = {
   "01": {
     number: "01",
     title: "Multi-Disease Screening",
@@ -197,7 +191,6 @@ export default function FeatureDetailModal({
   onClose,
   onSelectFeature,
 }) {
-  const [activeTab, setActiveTab] = useState("overview"); // 'overview', 'interactive'
   const [heatmapOpacity, setHeatmapOpacity] = useState(70);
   const [selectedDiseaseIdx, setSelectedDiseaseIdx] = useState(1);
 

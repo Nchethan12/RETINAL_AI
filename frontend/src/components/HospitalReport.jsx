@@ -8,14 +8,12 @@ import {
   Printer,
   Copy,
   Check,
-  Calendar,
   Clock,
   Download,
   CheckCircle2,
   Sparkles,
   ArrowLeft,
   X,
-  ExternalLink,
 } from "lucide-react";
 import TiltCard from "./TiltCard";
 
@@ -385,16 +383,16 @@ CLINICAL PRECAUTIONS:
 ${profile.precautions.map((p, i) => `${i + 1}. ${p}`).join("\n")}
 
 RECOMMENDED DIAGNOSTIC TESTS:
-${profile.diagnostic_tests.map((t, i) => `• ${t}`).join("\n")}
+${profile.diagnostic_tests.map((t) => `• ${t}`).join("\n")}
 
 TREATMENT PATHWAY:
-${profile.treatment_pathway.map((tr, i) => `• ${tr}`).join("\n")}
+${profile.treatment_pathway.map((tr) => `• ${tr}`).join("\n")}
 
 DIETARY & LIFESTYLE GUIDANCE:
-${profile.lifestyle_diet.map((l, i) => `• ${l}`).join("\n")}
+${profile.lifestyle_diet.map((l) => `• ${l}`).join("\n")}
 
 EMERGENCY WARNING RED FLAGS:
-${profile.emergency_symptoms.map((e, i) => `! ${e}`).join("\n")}
+${profile.emergency_symptoms.map((e) => `! ${e}`).join("\n")}
 
 Notice: Vision AI screening telemetry calibrated on ODIR-5K dataset.
 Requires clinical confirmation by licensed ophthalmologist.

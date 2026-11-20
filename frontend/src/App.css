@@ -6,6 +6,26 @@ html {
   scroll-behavior: smooth;
 }
 
+/* ========================================================= */
+/* THEMES & DYNAMIC CANVASES                                 */
+/* ========================================================= */
+
+:root {
+  --bg-canvas: #000000;
+  --bg-gradient:
+    radial-gradient(circle 800px at 50% 0%, rgba(39, 39, 42, 0.35) 0%, transparent 70%),
+    radial-gradient(circle 600px at 85% 85%, rgba(24, 24, 27, 0.5) 0%, transparent 50%),
+    linear-gradient(180deg, #000000 0%, #080808 50%, #000000 100%);
+  --navbar-bg: rgba(10, 10, 10, 0.92);
+  --card-bg: rgba(18, 18, 18, 0.85);
+  --card-border: rgba(255, 255, 255, 0.12);
+  --accent-primary: #38bdf8;
+  --accent-secondary: #f43f5e;
+  --text-main: #f4f4f5;
+  --text-muted: #a1a1aa;
+  --spotlight-gradient: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, rgba(56, 189, 248, 0.04) 45%, transparent 70%);
+}
+
 body {
   margin: 0;
   min-width: 320px;
@@ -17,10 +37,15 @@ body {
     "Segoe UI",
     sans-serif;
 
-  background: #07111f;
-  color: #edf5fb;
+  background-color: var(--bg-canvas, #000000);
+  background-image: var(--bg-gradient);
+  background-attachment: fixed;
+  background-size: cover;
+  background-repeat: no-repeat;
+  color: var(--text-main, #f4f4f5);
 
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.4s ease, color 0.4s ease;
 }
 
 button,
@@ -53,17 +78,7 @@ a {
 }
 
 .cursor-spotlight {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 520px;
-  height: 520px;
-  border-radius: 50%;
-  pointer-events: none;
-  background: radial-gradient(circle, rgba(56, 189, 248, 0.07) 0%, rgba(45, 212, 191, 0.03) 40%, transparent 70%);
-  z-index: 1;
-  mix-blend-mode: screen;
-  will-change: transform;
+  display: none !important;
 }
 
 .app {
@@ -86,11 +101,12 @@ a {
 
   z-index: 100;
 
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 
-  background: rgba(7, 17, 31, 0.9);
+  background: var(--navbar-bg, rgba(9, 10, 22, 0.88));
 
   backdrop-filter: blur(18px);
+  transition: background 0.4s ease, border-color 0.4s ease;
 }
 
 .navbar-container {
@@ -2647,7 +2663,7 @@ a {
 }
 
 .tilt-card-shine {
-  pointer-events: none;
+  display: none !important;
 }
 
 
@@ -7073,11 +7089,6 @@ a {
   object-fit: contain;
   border-radius: 8px;
   display: block;
-  transition: transform 0.25s ease;
-}
-
-.xai-image:hover {
-  transform: scale(1.02);
 }
 
 .xai-view-watermark {
@@ -7316,3 +7327,4 @@ a {
     grid-template-columns: 1fr;
   }
 }
+

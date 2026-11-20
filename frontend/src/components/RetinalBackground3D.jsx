@@ -10,7 +10,7 @@ export default function RetinalBackground3D() {
 
     // --- Scene, Camera, Renderer ---
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x060e1a, 0.0018);
+    scene.fog = new THREE.FogExp2(0x000000, 0.0018);
 
     const camera = new THREE.PerspectiveCamera(
       60,
@@ -39,13 +39,13 @@ export default function RetinalBackground3D() {
     const velocities = [];
     const colors = new Float32Array(particleCount * 3);
 
-    // Palette: Medical Cyan, Emerald, Soft Violet, Arctic White
-    const palette = [
-      new THREE.Color(0x38bdf8), // Cyan
-      new THREE.Color(0x2dd4bf), // Emerald/Teal
-      new THREE.Color(0x818cf8), // Violet
-      new THREE.Color(0xbae6fd), // Light Cyan
-      new THREE.Color(0x0284c7), // Deep Azure
+    // Midnight Onyx Palette
+    const ONYX_PALETTE = [
+      new THREE.Color(0x38bdf8), // Electric Cyan
+      new THREE.Color(0x94a3b8), // Silver
+      new THREE.Color(0xffffff), // Pure White
+      new THREE.Color(0x64748b), // Slate Titanium
+      new THREE.Color(0xf43f5e), // Crimson Accent
     ];
 
     for (let i = 0; i < particleCount; i++) {
@@ -59,7 +59,7 @@ export default function RetinalBackground3D() {
         z: (Math.random() - 0.5) * 0.25,
       });
 
-      const color = palette[Math.floor(Math.random() * palette.length)];
+      const color = ONYX_PALETTE[Math.floor(Math.random() * ONYX_PALETTE.length)];
       colors[i * 3] = color.r;
       colors[i * 3 + 1] = color.g;
       colors[i * 3 + 2] = color.b;

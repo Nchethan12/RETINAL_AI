@@ -1,9 +1,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import confetti from "canvas-confetti";
 import {
   Camera,
   UploadCloud,
-  CheckCircle2,
   AlertTriangle,
   FileText,
   Printer,
@@ -12,7 +10,6 @@ import {
   ShieldAlert,
   Eye,
   RefreshCw,
-  Clock,
   Zap,
   Crosshair,
   Scan,
@@ -23,11 +20,10 @@ import {
 } from "lucide-react";
 import TiltCard from "./TiltCard";
 import RetinalBackground3D from "./RetinalBackground3D";
-import CursorGlow from "./CursorGlow";
 import HospitalReport from "./HospitalReport";
 
 const API_BASE_URL = (
-  import.meta.env.VITE_API_URL || "https://retinal-ai-backend.onrender.com"
+  import.meta.env.VITE_API_URL || ""
 ).replace(/\/$/, "");
 
 const PRESET_SAMPLE_CASES = [
@@ -156,11 +152,11 @@ export default function AnteriorSelfiePage({ onSwitchToRetinal }) {
   // -------------------------------------------------------------
   // Real-Time Eyeball Detection & Camera HUD Loop
   // -------------------------------------------------------------
-  const drawHUD = useCallback(() => {
+  const drawHUD = useCallback(function renderHUD() {
     const video = videoRef.current;
     const canvas = overlayCanvasRef.current;
     if (!video || !canvas || video.readyState < 2) {
-      animFrameRef.current = requestAnimationFrame(drawHUD);
+      animFrameRef.current = requestAnimationFrame(renderHUD);
       return;
     }
 
@@ -174,7 +170,7 @@ export default function AnteriorSelfiePage({ onSwitchToRetinal }) {
 
     const ctx = canvas.getContext("2d");
     if (!ctx) {
-      animFrameRef.current = requestAnimationFrame(drawHUD);
+      animFrameRef.current = requestAnimationFrame(renderHUD);
       return;
     }
 
@@ -297,7 +293,7 @@ export default function AnteriorSelfiePage({ onSwitchToRetinal }) {
 
     ctx.restore();
 
-    animFrameRef.current = requestAnimationFrame(drawHUD);
+    animFrameRef.current = requestAnimationFrame(renderHUD);
   }, []);
 
   // -------------------------------------------------------------
@@ -606,17 +602,6 @@ export default function AnteriorSelfiePage({ onSwitchToRetinal }) {
 
       setAnalysisResult(data);
       setMessage(`Analysis complete: ${data.primary_disease}`);
-
-      try {
-        confetti({
-          particleCount: 75,
-          spread: 80,
-          origin: { y: 0.6 },
-          colors: ["#38bdf8", "#2dd4bf", "#f59e0b", "#34d399", "#ffffff"],
-        });
-      } catch {
-        // Confetti fallback
-      }
     } catch (err) {
       setError(err.message || "Failed to analyze eye images. Please check connection.");
     } finally {
@@ -639,7 +624,6 @@ export default function AnteriorSelfiePage({ onSwitchToRetinal }) {
   return (
     <div className="app anterior-selfie-mode-page">
       <RetinalBackground3D />
-      <CursorGlow />
 
       {/* Hidden Native Camera Shutter Input */}
       <input
